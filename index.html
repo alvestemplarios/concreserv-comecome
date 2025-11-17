@@ -97,6 +97,39 @@ canvas {
   text-shadow: 0 0 8px #00eaff;
 }
 
+/* JOYSTICK CIRCULAR CENTRAL INFERIOR */
+#joystickWrapper {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 140px;
+  touch-action: none;
+  z-index: 6;
+}
+
+#joyBase {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 2px solid #00eaff;
+  background: radial-gradient(circle, rgba(0,234,255,0.18), rgba(0,0,0,0.9));
+  box-shadow: 0 0 15px #00eaff88;
+}
+
+#joyStick {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #00eaff, #004a66);
+  box-shadow: 0 0 12px #00eaff, 0 0 20px #00eaffaa;
+  left: 40px;  /* centro = (140 - 60)/2 */
+  top:  40px;
+}
+
 @media (max-width: 700px) {
   canvas {
     transform: scale(0.85);
@@ -135,6 +168,13 @@ canvas {
   <div>Melhor: <span id="bestValue">0</span></div>
 </div>
 
+<!-- JOYSTICK CIRCULAR -->
+<div id="joystickWrapper">
+  <div id="joyBase">
+    <div id="joyStick"></div>
+  </div>
+</div>
+
 <div id="footerBrand">ALVES GAMES / CONCRESERV EDITION — 2025</div>
 
 <script>
@@ -169,6 +209,10 @@ const scoreSpan = document.getElementById("scoreValue");
 const bestSpan  = document.getElementById("bestValue");
 const levelSpan = document.getElementById("levelValue");
 
+/* JOYSTICK ELEMENTOS */
+const joyBase   = document.getElementById("joyBase");
+const joyStick  = document.getElementById("joyStick");
+
 /* ============================================================
    ESTADO
    ============================================================ */
@@ -202,7 +246,7 @@ let maze    = [];
 let pellets = [];
 
 /* ============================================================
-   SPRITES (TODOS NA RAIZ)
+   SPRITES
    ============================================================ */
 const truckRealImg  = new Image(); truckRealImg.src  = "truck_real.png";
 const truckPixelImg = new Image(); truckPixelImg.src = "truck_pixel.png";
@@ -217,32 +261,6 @@ const ghostOrangeImg = new Image(); ghostOrangeImg.src = "ghost_orange.png";
 let spriteMode = "real";
 
 /* ============================================================
-   TOQUE (SWIPE)
-   ============================================================ */
-let touchStartX = 0;
-let touchStartY = 0;
-
-canvas.addEventListener("touchstart", (e) => {
-  const t = e.touches[0];
-  touchStartX = t.clientX;
-  touchStartY = t.clientY;
-});
-
-canvas.addEventListener("touchend", (e) => {
-  const t = e.changedTouches[0];
-  const dx = t.clientX - touchStartX;
-  const dy = t.clientY - touchStartY;
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 25)  setDirection(1, 0);
-    if (dx < -25) setDirection(-1, 0);
-  } else {
-    if (dy > 25)  setDirection(0, 1);
-    if (dy < -25) setDirection(0, -1);
-  }
-});
-
-/* ============================================================
    PLAYER
    ============================================================ */
 const truck = {
@@ -250,13 +268,11 @@ const truck = {
   dirX:1, dirY:0,
   nextDirX:1, nextDirY:0,
   offsetX:0, offsetY:0,
-
-  /* Versão lenta para celular */
-  speed:0.04  
+  speed:0.04   // velocidade ajustada pro celular
 };
 
 /* ============================================================
-   FANTASMAS MAIS LENTOS (MOBILE)
+   FANTASMAS
    ============================================================ */
 const ghosts = [];
 
@@ -303,13 +319,118 @@ function updateRanking(){
 updateRanking();
 
 /* ============================================================
-   CONTROLES
+   CONTROLES (TECLADO OPCIONAL)
    ============================================================ */
 function setDirection(dx,dy){
   truck.nextDirX = dx;
   truck.nextDirY = dy;
   playSound(sndMove);
 }
+
+window.addEventListener("keydown",(e)=>{
+  if (e.key==="ArrowUp")    setDirection(0,-1);
+  if (e.key==="ArrowDown")  setDirection(0,1);
+  if (e.key==="ArrowLeft")  setDirection(-1,0);
+  if (e.key==="ArrowRight") setDirection(1,0);
+});
+
+/* ============================================================
+   JOYSTICK CIRCULAR (TOUCH/MOUSE)
+   ============================================================ */
+const JOY_SIZE   = 140;
+const KNOB_SIZE  = 60;
+const JOY_CENTER = (JOY_SIZE - KNOB_SIZE) / 2; // 40
+const MAX_DIST   = JOY_CENTER;                 // raio máximo do knob
+
+let joyActive = false;
+
+function joySetCenter(){
+  joyStick.style.left = JOY_CENTER + "px";
+  joyStick.style.top  = JOY_CENTER + "px";
+}
+joySetCenter();
+
+function handleJoyStart(clientX, clientY){
+  joyActive = true;
+}
+
+function handleJoyMove(clientX, clientY){
+  if (!joyActive) return;
+
+  const rect = joyBase.getBoundingClientRect();
+  const localX = clientX - rect.left;
+  const localY = clientY - rect.top;
+
+  let dx = localX - JOY_SIZE/2;
+  let dy = localY - JOY_SIZE/2;
+
+  const dist = Math.hypot(dx,dy) || 1;
+  if (dist > MAX_DIST){
+    const ratio = MAX_DIST / dist;
+    dx *= ratio;
+    dy *= ratio;
+  }
+
+  joyStick.style.left = (JOY_CENTER + dx) + "px";
+  joyStick.style.top  = (JOY_CENTER + dy) + "px";
+
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+  const deadZone = 8;
+
+  if (absX < deadZone && absY < deadZone) {
+    return;
+  }
+
+  if (absX > absY){
+    if (dx > 0) setDirection(1,0);
+    else        setDirection(-1,0);
+  } else {
+    if (dy > 0) setDirection(0,1);
+    else        setDirection(0,-1);
+  }
+}
+
+function handleJoyEnd(){
+  joyActive = false;
+  joySetCenter();
+}
+
+// TOUCH
+joyBase.addEventListener("touchstart",(e)=>{
+  e.preventDefault();
+  const t = e.touches[0];
+  handleJoyStart(t.clientX, t.clientY);
+});
+
+joyBase.addEventListener("touchmove",(e)=>{
+  e.preventDefault();
+  const t = e.touches[0];
+  handleJoyMove(t.clientX, t.clientY);
+});
+
+joyBase.addEventListener("touchend",(e)=>{
+  e.preventDefault();
+  handleJoyEnd();
+});
+
+// MOUSE (pra testar no PC)
+joyBase.addEventListener("mousedown",(e)=>{
+  e.preventDefault();
+  handleJoyStart(e.clientX, e.clientY);
+});
+
+window.addEventListener("mousemove",(e)=>{
+  if (!joyActive) return;
+  e.preventDefault();
+  handleJoyMove(e.clientX, e.clientY);
+});
+
+window.addEventListener("mouseup",(e)=>{
+  if (!joyActive) return;
+  e.preventDefault();
+  handleJoyEnd();
+});
 
 /* ============================================================
    START / MODE
