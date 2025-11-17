@@ -4,6 +4,15 @@
 <meta charset="UTF-8" />
 <title>CONCRESERV COME-COME — ALVES GAMES</title>
 
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00eaff">
+
+<!-- iPhone -->
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
 <style>
 body {
   margin: 0;
@@ -138,7 +147,7 @@ canvas {
   </div>
 
   <div id="levelOverlay">
-    <img src="img/truck_face.png" id="truckFace" alt="CONCRESERV">
+    <img src="truck_face.png" id="truckFace" alt="CONCRESERV">
     <div id="levelTitle">FASE CONCLUÍDA!</div>
     <div id="levelMsg"></div>
   </div>
@@ -162,12 +171,12 @@ canvas {
 
 <script>
 /* ============================================================
-   ÁUDIO DO JOGO
+   ÁUDIO DO JOGO (ARQUIVOS NA RAIZ)
    ============================================================ */
-const sndEat     = new Audio("snd/eat.wav");
-const sndDeath   = new Audio("snd/death.wav");
-const sndVictory = new Audio("snd/victory.wav");
-const sndMove    = new Audio("snd/move.wav");
+const sndEat     = new Audio("eat.wav");
+const sndDeath   = new Audio("death.wav");
+const sndVictory = new Audio("victory.wav");
+const sndMove    = new Audio("move.wav");
 
 function playSound(snd) {
   snd.currentTime = 0;
@@ -207,7 +216,7 @@ let currentLevel = 1;
 const tileSize   = 32;
 
 /* ============================================================
-   LABIRINTO
+   LABIRINTO (mesmo de antes)
    ============================================================ */
 const baseMaze = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -234,27 +243,17 @@ const rows = baseMaze.length;
 const cols = baseMaze[0].length;
 
 /* ============================================================
-   SPRITES
+   SPRITES (ARQUIVOS NA RAIZ)
    ============================================================ */
-const truckRealImg  = new Image();
-const truckPixelImg = new Image();
-const truckUpImg    = new Image();
-const truckDownImg  = new Image();
+const truckRealImg  = new Image(); truckRealImg.src  = "truck_real.png";
+const truckPixelImg = new Image(); truckPixelImg.src = "truck_pixel.png";
+const truckUpImg    = new Image(); truckUpImg.src    = "truck_up.png";
+const truckDownImg  = new Image(); truckDownImg.src  = "truck_down.png";
 
-truckRealImg.src  = "img/truck_real.png";
-truckPixelImg.src = "img/truck_pixel.png";
-truckUpImg.src    = "img/truck_up.png";
-truckDownImg.src  = "img/truck_down.png";
-
-const ghostRedImg    = new Image();
-const ghostPinkImg   = new Image();
-const ghostBlueImg   = new Image();
-const ghostOrangeImg = new Image();
-
-ghostRedImg.src    = "img/ghost_red.png";
-ghostPinkImg.src   = "img/ghost_pink.png";
-ghostBlueImg.src   = "img/ghost_blue.png";
-ghostOrangeImg.src = "img/ghost_orange.png";
+const ghostRedImg    = new Image(); ghostRedImg.src    = "ghost_red.png";
+const ghostPinkImg   = new Image(); ghostPinkImg.src   = "ghost_pink.png";
+const ghostBlueImg   = new Image(); ghostBlueImg.src   = "ghost_blue.png";
+const ghostOrangeImg = new Image(); ghostOrangeImg.src = "ghost_orange.png";
 
 let spriteMode = "real";
 
@@ -358,7 +357,7 @@ modeBtn.addEventListener("click", () => {
 });
 
 /* ============================================================
-   NÍVEIS
+   NÍVEIS / LÓGICA
    ============================================================ */
 function setupLevel() {
   maze    = baseMaze.map(row => row.slice());
@@ -404,9 +403,6 @@ function gameOver() {
   startBtn.textContent  = "JOGAR NOVO";
 }
 
-/* ============================================================
-   LÓGICA DO JOGO
-   ============================================================ */
 function updateTruck() {
   if (truck.offsetX === 0 && truck.offsetY === 0) {
     const tx = truck.x + truck.nextDirX;
@@ -556,9 +552,6 @@ function draw() {
   ghosts.forEach(drawGhost);
 }
 
-/* ============================================================
-   LOOP PRINCIPAL
-   ============================================================ */
 function loop() {
   if (gameState === "playing") {
     updateTruck();
@@ -571,6 +564,15 @@ function loop() {
 
 setupLevel();
 loop();
+</script>
+
+<!-- REGISTER SERVICE WORKER -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js')
+    .then(() => console.log("PWA ativo!"))
+    .catch(err => console.log("Erro SW:", err));
+}
 </script>
 
 </body>
